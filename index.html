@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>نُظُم صحي — تغذيتك بذكاء</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --teal-950: #0F2B26;
+    --teal-800: #16453C;
+    --teal-600: #1F6152;
+    --gold-500: #C89B3C;
+    --gold-400: #D9B15C;
+    --sand-50: #F6F3EC;
+    --sand-100: #EFE9DA;
+    --ink: #1A241F;
+    --muted: #5B6B62;
+    --danger: #B5453A;
+    --ok: #3C7A5B;
+    --radius: 14px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--sand-50);
+    color: var(--ink);
+    font-family: 'IBM Plex Sans Arabic', sans-serif;
+    line-height: 1.6;
+  }
+  h1, h2, h3, .display { font-family: 'Tajawal', sans-serif; }
+
+  /* ---------- Header ---------- */
+  header {
+    background: var(--teal-950);
+    color: var(--sand-50);
+    padding: 18px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky; top: 0; z-index: 10;
+  }
+  header .brand { display: flex; align-items: center; gap: 10px; }
+  header .brand .mark {
+    width: 34px; height: 34px; border-radius: 9px;
+    background: linear-gradient(135deg, var(--gold-400), var(--gold-500));
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Tajawal'; font-weight: 900; color: var(--teal-950); font-size: 18px;
+  }
+  header .brand span { font-family: 'Tajawal'; font-weight: 700; font-size: 19px; }
+  header nav button {
+    background: none; border: none; color: var(--sand-100);
+    font-family: 'Tajawal'; font-size: 15px; cursor: pointer; padding: 8px 14px;
+    border-radius: 8px; opacity: .75; transition: .15s;
+  }
+  header nav button.active, header nav button:hover { opacity: 1; background: rgba(255,255,255,.08); }
+
+  main { max-width: 640px; margin: 0 auto; padding: 28px 20px 80px; }
+  .view { display: none; animation: fadeIn .25s ease; }
+  .view.active { display: block; }
+  @keyframes fadeIn { from { opacity:0; transform: translateY(6px);} to {opacity:1; transform:none;} }
+
+  .hero { text-align: center; margin-bottom: 28px; }
+  .hero h1 { font-size: 30px; font-weight: 900; margin: 0 0 8px; color: var(--teal-950); }
+  .hero p { color: var(--muted); margin: 0; font-size: 15px; }
+
+  .card {
+    background: #fff; border: 1px solid var(--sand-100);
+    border-radius: var(--radius); padding: 22px; margin-bottom: 16px;
+    box-shadow: 0 1px 2px rgba(15,43,38,.04);
+  }
+  .card h3 { margin: 0 0 16px; font-size: 17px; color: var(--teal-800); }
+
+  label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 5px; margin-top: 12px; }
+  input, select {
+    width: 100%; padding: 11px 13px; border-radius: 9px;
+    border: 1.5px solid var(--sand-100); background: var(--sand-50);
+    font-family: inherit; font-size: 14.5px; color: var(--ink);
+  }
+  input:focus, select:focus { outline: none; border-color: var(--teal-600); background: #fff; }
+
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  button.primary {
+    width: 100%; margin-top: 18px; padding: 13px;
+    background: var(--teal-800); color: #fff; border: none;
+    border-radius: 9px; font-family: 'Tajawal'; font-weight: 700; font-size: 15.5px;
+    cursor: pointer; transition: .15s;
+  }
+  button.primary:hover { background: var(--teal-950); }
+  button.ghost {
+    width: 100%; margin-top: 8px; padding: 11px;
+    background: none; border: 1.5px solid var(--sand-100); color: var(--teal-800);
+    border-radius: 9px; font-family: 'Tajawal'; font-weight: 600; font-size: 14px; cursor: pointer;
+  }
+
+  .result-plate {
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 18px;
+  }
+  .stat {
+    background: var(--sand-50); border-radius: 10px; padding: 14px;
+    text-align: center;
+  }
+  .stat .num { font-family: 'Tajawal'; font-weight: 900; font-size: 22px; color: var(--teal-800); }
+  .stat .lbl { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .stat.accent .num { color: var(--gold-500); }
+
+  .msg { padding: 11px 14px; border-radius: 9px; font-size: 13.5px; margin-top: 12px; display:none; }
+  .msg.error { background: #FBEAE8; color: var(--danger); display: block; }
+  .msg.ok { background: #E9F3EC; color: var(--ok); display: block; }
+
+  .food-item {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 12px 14px; border: 1px solid var(--sand-100); border-radius: 10px;
+    margin-bottom: 8px; cursor: pointer; transition: .12s;
+  }
+  .food-item:hover { border-color: var(--teal-600); background: var(--sand-50); }
+  .food-item .name { font-weight: 600; font-size: 14.5px; }
+  .food-item .meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .food-item .cal { font-family: 'Tajawal'; font-weight: 700; color: var(--teal-800); font-size: 14px; }
+  .badge {
+    display: inline-block; font-size: 10.5px; padding: 2px 7px; border-radius: 100px;
+    background: var(--sand-100); color: var(--muted); margin-inline-start: 6px;
+  }
+  .badge.warn { background: #FBEAE8; color: var(--danger); }
+
+  .summary-bar { background: var(--sand-100); border-radius: 100px; height: 10px; overflow: hidden; margin-top: 8px;}
+  .summary-bar > div { height: 100%; background: var(--teal-600); border-radius: 100px; transition: width .3s; }
+
+  .empty-state { text-align: center; padding: 30px 10px; color: var(--muted); font-size: 14px; }
+
+  .top-user { display:flex; align-items:center; justify-content:space-between; margin-bottom: 20px;}
+  .top-user .who { font-family:'Tajawal'; font-weight:700; color: var(--teal-950); }
+  .top-user button { background:none; border:none; color: var(--danger); font-size:13px; cursor:pointer; }
+
+  footer.note {
+    max-width: 640px; margin: 0 auto; padding: 0 20px 40px; color: var(--muted); font-size: 12px; text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <div class="mark">ن</div>
+    <span>نُظُم صحي</span>
+  </div>
+  <nav id="nav">
+    <button data-view="calc" class="active">الحاسبة</button>
+    <button data-view="auth">دخول</button>
+  </nav>
+</header>
+
+<main>
+
+  <!-- ============ حاسبة سريعة ============ -->
+  <section class="view active" id="view-calc">
+    <div class="hero">
+      <h1>احسب احتياجك اليومي</h1>
+      <p>بدون تسجيل — أدخل بياناتك واحصل على هدفك الدقيق فوراً</p>
+    </div>
+    <div class="card">
+      <div class="row">
+        <div>
+          <label>الجنس</label>
+          <select id="c-gender"><option value="male">ذكر</option><option value="female">أنثى</option></select>
+        </div>
+        <div>
+          <label>العمر</label>
+          <input type="number" id="c-age" placeholder="38">
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <label>الوزن (كجم)</label>
+          <input type="number" id="c-weight" placeholder="71.5" step="0.1">
+        </div>
+        <div>
+          <label>الطول (سم)</label>
+          <input type="number" id="c-height" placeholder="169">
+        </div>
+      </div>
+      <label>مستوى النشاط</label>
+      <select id="c-activity">
+        <option value="sedentary">قليل الحركة (عمل مكتبي)</option>
+        <option value="light">نشاط خفيف (1-3 أيام رياضة)</option>
+        <option value="moderate">نشاط متوسط (3-5 أيام)</option>
+        <option value="active">نشاط عالي (6-7 أيام)</option>
+        <option value="very_active">نشاط عالي جداً</option>
+      </select>
+      <label>الهدف</label>
+      <select id="c-goal">
+        <option value="maintain">ثبات الوزن</option>
+        <option value="lose">نزول وزن</option>
+        <option value="gain">زيادة وزن</option>
+      </select>
+      <button class="primary" onclick="quickCalculate()">احسب احتياجي</button>
+      <div id="calc-msg" class="msg"></div>
+      <div class="result-plate" id="calc-result" style="display:none;">
+        <div class="stat accent"><div class="num" id="r-cal">-</div><div class="lbl">سعرة/يوم (الهدف)</div></div>
+        <div class="stat"><div class="num" id="r-tdee">-</div><div class="lbl">احتياجك الكامل (TDEE)</div></div>
+        <div class="stat"><div class="num" id="r-protein">-</div><div class="lbl">بروتين (جرام)</div></div>
+        <div class="stat"><div class="num" id="r-carbs">-</div><div class="lbl">كارب (جرام)</div></div>
+        <div class="stat"><div class="num" id="r-fat">-</div><div class="lbl">دهون (جرام)</div></div>
+        <div class="stat"><div class="num" id="r-sodium">-</div><div class="lbl">حد الصوديوم (مجم)</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ تسجيل / دخول ============ -->
+  <section class="view" id="view-auth">
+    <div class="hero">
+      <h1>أنشئ حسابك</h1>
+      <p>لحفظ أهدافك وتتبع وجباتك يومياً</p>
+    </div>
+
+    <div class="card">
+      <h3>مستخدم جديد؟ سجّل حساب</h3>
+      <label>الاسم الكامل</label>
+      <input id="reg-name" placeholder="اسمك">
+      <label>البريد الإلكتروني</label>
+      <input id="reg-email" type="email" placeholder="name@example.com">
+      <label>كلمة المرور</label>
+      <input id="reg-password" type="password" placeholder="8 أحرف على الأقل">
+      <div class="row">
+        <div><label>الجنس</label><select id="reg-gender"><option value="male">ذكر</option><option value="female">أنثى</option></select></div>
+        <div><label>تاريخ الميلاد</label><input id="reg-birth" type="date"></div>
+      </div>
+      <div class="row">
+        <div><label>الوزن (كجم)</label><input id="reg-weight" type="number" step="0.1"></div>
+        <div><label>الطول (سم)</label><input id="reg-height" type="number"></div>
+      </div>
+      <label>مستوى النشاط</label>
+      <select id="reg-activity">
+        <option value="sedentary">قليل الحركة</option>
+        <option value="light">نشاط خفيف</option>
+        <option value="moderate">نشاط متوسط</option>
+        <option value="active">نشاط عالي</option>
+        <option value="very_active">نشاط عالي جداً</option>
+      </select>
+      <label>الهدف</label>
+      <select id="reg-goal">
+        <option value="maintain">ثبات الوزن</option>
+        <option value="lose">نزول وزن</option>
+        <option value="gain">زيادة وزن</option>
+      </select>
+      <label>هل عندك حالة طبية؟ (اختياري)</label>
+      <select id="reg-condition">
+        <option value="">لا يوجد</option>
+        <option value="diabetes_t2">سكري النوع الثاني</option>
+        <option value="hypertension">ارتفاع ضغط الدم</option>
+        <option value="high_cholesterol">ارتفاع الكوليسترول</option>
+      </select>
+      <button class="primary" onclick="registerUser()">إنشاء الحساب</button>
+      <div id="reg-msg" class="msg"></div>
+    </div>
+
+    <div class="card">
+      <h3>عندك حساب؟ سجّل دخولك</h3>
+      <label>البريد الإلكتروني</label>
+      <input id="login-email" type="email">
+      <label>كلمة المرور</label>
+      <input id="login-password" type="password">
+      <button class="primary" onclick="loginUser()">دخول</button>
+      <div id="login-msg" class="msg"></div>
+    </div>
+  </section>
+
+  <!-- ============ لوحة التحكم ============ -->
+  <section class="view" id="view-dashboard">
+    <div class="top-user">
+      <div class="who" id="dash-username">-</div>
+      <button onclick="logout()">تسجيل خروج</button>
+    </div>
+
+    <div class="card">
+      <h3>هدفك اليوم</h3>
+      <div class="result-plate" id="dash-targets">
+        <div class="stat accent"><div class="num" id="d-target-cal">-</div><div class="lbl">هدف السعرات</div></div>
+        <div class="stat"><div class="num" id="d-consumed-cal">-</div><div class="lbl">المستهلك اليوم</div></div>
+      </div>
+      <div class="summary-bar"><div id="cal-progress-bar" style="width:0%"></div></div>
+    </div>
+
+    <div class="card">
+      <h3>سجّل وجبة</h3>
+      <input id="food-search" placeholder="ابحث عن صنف... مثال: كبسة، مندي، شوفان" oninput="searchFood()">
+      <div id="food-results" style="margin-top:12px;"></div>
+    </div>
+
+    <div class="card">
+      <h3>وجبات اليوم</h3>
+      <div id="today-meals"><div class="empty-state">ما فيه وجبات مسجّلة اليوم بعد</div></div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="note">
+  نُظُم صحي — بيانات الأكل حالياً بيانات تقديرية أولية تحت المراجعة، وما تُعتبر بديل عن استشارة أخصائي تغذية أو طبيب مختص.
+</footer>
+
+<script>
+// ⚙️ عنوان الـ API — يتغيّر حسب مكان تشغيل السيرفر (محلي أو مستضاف)
+const API_BASE = window.API_BASE_URL || "https://web-production-5ed137.up.railway.app";
+
+let state = { token: localStorage.getItem("nz_token") || null, userId: localStorage.getItem("nz_user_id") || null, userName: localStorage.getItem("nz_user_name") || null };
+
+// ---------- التنقل بين الصفحات ----------
+document.querySelectorAll('#nav button').forEach(btn => {
+  btn.addEventListener('click', () => showView(btn.dataset.view));
+});
+
+function showView(name) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view-' + name).classList.add('active');
+  document.querySelectorAll('#nav button').forEach(b => b.classList.toggle('active', b.dataset.view === name));
+}
+
+function refreshNav() {
+  const nav = document.getElementById('nav');
+  if (state.token) {
+    nav.innerHTML = `<button data-view="calc">الحاسبة</button><button data-view="dashboard" class="active">لوحتي</button>`;
+    document.querySelectorAll('#nav button').forEach(btn => btn.addEventListener('click', () => showView(btn.dataset.view)));
+    document.getElementById('dash-username').textContent = "مرحباً، " + (state.userName || "");
+    showView('dashboard');
+    loadDashboard();
+  }
+}
+refreshNav();
+
+// ---------- حاسبة سريعة ----------
+async function quickCalculate() {
+  const msg = document.getElementById('calc-msg');
+  msg.className = 'msg'; msg.style.display = 'none';
+  const payload = {
+    gender: document.getElementById('c-gender').value,
+    age: parseInt(document.getElementById('c-age').value),
+    weight_kg: parseFloat(document.getElementById('c-weight').value),
+    height_cm: parseFloat(document.getElementById('c-height').value),
+    activity_level: document.getElementById('c-activity').value,
+    goal: document.getElementById('c-goal').value,
+  };
+  if (!payload.age || !payload.weight_kg || !payload.height_cm) {
+    msg.className = 'msg error'; msg.textContent = 'عبّي كل الحقول أول'; return;
+  }
+  try {
+    const res = await fetch(`${API_BASE}/calculator/quick`, {
+      method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload)
+    });
+    if (!res.ok) throw new Error();
+    const data = await res.json();
+    document.getElementById('r-cal').textContent = data.target_calories;
+    document.getElementById('r-tdee').textContent = data.tdee_kcal;
+    document.getElementById('r-protein').textContent = data.target_protein_g;
+    document.getElementById('r-carbs').textContent = data.target_carbs_g;
+    document.getElementById('r-fat').textContent = data.target_fat_g;
+    document.getElementById('r-sodium').textContent = data.target_sodium_mg;
+    document.getElementById('calc-result').style.display = 'grid';
+  } catch (e) {
+    msg.className = 'msg error'; msg.textContent = 'تعذر الاتصال بالسيرفر — تأكد إن الـ API شغال';
+  }
+}
+
+// ---------- تسجيل ----------
+async function registerUser() {
+  const msg = document.getElementById('reg-msg');
+  const conditionVal = document.getElementById('reg-condition').value;
+  const payload = {
+    email: document.getElementById('reg-email').value,
+    password: document.getElementById('reg-password').value,
+    full_name: document.getElementById('reg-name').value,
+    gender: document.getElementById('reg-gender').value,
+    birth_date: document.getElementById('reg-birth').value,
+    weight_kg: parseFloat(document.getElementById('reg-weight').value),
+    height_cm: parseFloat(document.getElementById('reg-height').value),
+    activity_level: document.getElementById('reg-activity').value,
+    goal: document.getElementById('reg-goal').value,
+    medical_condition_codes: conditionVal ? [conditionVal] : [],
+  };
+  try {
+    const res = await fetch(`${API_BASE}/users/register`, {
+      method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'فشل التسجيل');
+    msg.className = 'msg ok'; msg.textContent = 'تم إنشاء الحساب! سجّل دخولك بالأسفل';
+    document.getElementById('login-email').value = payload.email;
+  } catch (e) {
+    msg.className = 'msg error'; msg.textContent = e.message || 'صار خطأ، حاول مرة ثانية';
+  }
+}
+
+// ---------- دخول ----------
+async function loginUser() {
+  const msg = document.getElementById('login-msg');
+  const email = document.getElementById('login-email').value;
+  const password = document.getElementById('login-password').value;
+  try {
+    const res = await fetch(`${API_BASE}/auth/login`, {
+      method: 'POST', headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+      body: `username=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'فشل الدخول');
+    state.token = data.access_token; state.userId = data.user_id; state.userName = email.split('@')[0];
+    localStorage.setItem('nz_token', state.token);
+    localStorage.setItem('nz_user_id', state.userId);
+    localStorage.setItem('nz_user_name', state.userName);
+    refreshNav();
+  } catch (e) {
+    msg.className = 'msg error'; msg.textContent = e.message;
+  }
+}
+
+function logout() {
+  localStorage.clear(); state = { token: null, userId: null, userName: null };
+  location.reload();
+}
+
+function authHeaders() { return { 'Authorization': `Bearer ${state.token}` }; }
+
+// ---------- لوحة التحكم ----------
+let cachedTarget = null;
+
+async function loadDashboard() {
+  try {
+    const res = await fetch(`${API_BASE}/users/${state.userId}/targets`, { headers: authHeaders() });
+    cachedTarget = await res.json();
+    document.getElementById('d-target-cal').textContent = cachedTarget.target_calories;
+  } catch (e) {}
+  loadTodaySummary();
+}
+
+async function loadTodaySummary() {
+  const today = new Date().toISOString().split('T')[0];
+  try {
+    const res = await fetch(`${API_BASE}/users/${state.userId}/meals/daily-summary?log_date=${today}`, { headers: authHeaders() });
+    const data = await res.json();
+    document.getElementById('d-consumed-cal').textContent = data.total_calories;
+    if (cachedTarget) {
+      const pct = Math.min(100, (data.total_calories / cachedTarget.target_calories) * 100);
+      document.getElementById('cal-progress-bar').style.width = pct + '%';
+    }
+    const list = document.getElementById('today-meals');
+    if (data.items.length === 0) {
+      list.innerHTML = '<div class="empty-state">ما فيه وجبات مسجّلة اليوم بعد</div>';
+    } else {
+      list.innerHTML = data.items.map(i => `
+        <div class="food-item">
+          <div><div class="name">${i.name_ar}</div><div class="meta">${mealTypeAr(i.meal_type)}</div></div>
+          <div class="cal">${i.calories} سعرة</div>
+        </div>`).join('');
+    }
+  } catch (e) {}
+}
+
+function mealTypeAr(t) {
+  return {breakfast:'فطور', lunch:'غداء', dinner:'عشاء', snack:'سناك'}[t] || t;
+}
+
+let searchTimeout;
+async function searchFood() {
+  clearTimeout(searchTimeout);
+  const q = document.getElementById('food-search').value.trim();
+  const results = document.getElementById('food-results');
+  if (q.length < 2) { results.innerHTML = ''; return; }
+  searchTimeout = setTimeout(async () => {
+    try {
+      const res = await fetch(`${API_BASE}/food-items/?q=${encodeURIComponent(q)}&verified_only=false&limit=8`);
+      const foods = await res.json();
+      if (foods.length === 0) { results.innerHTML = '<div class="empty-state">ما فيه نتائج</div>'; return; }
+      results.innerHTML = foods.map(f => `
+        <div class="food-item" onclick='logMeal(${JSON.stringify(f.id)}, ${JSON.stringify(f.name_ar)})'>
+          <div>
+            <div class="name">${f.name_ar} ${!f.verified_by_dietitian ? '<span class="badge warn">غير معتمد بعد</span>' : ''}</div>
+            <div class="meta">لكل ${f.serving_size_g} جرام (${f.serving_desc_ar || ''})</div>
+          </div>
+          <div class="cal">${f.calories_kcal} سعرة</div>
+        </div>`).join('');
+    } catch (e) {}
+  }, 300);
+}
+
+async function logMeal(foodId, foodName) {
+  const mealType = prompt(`تسجيل "${foodName}" — أي وجبة؟ (breakfast/lunch/dinner/snack)`, 'lunch');
+  if (!mealType) return;
+  const qty = prompt('الكمية بالجرام؟', '200');
+  if (!qty) return;
+  try {
+    const res = await fetch(`${API_BASE}/users/${state.userId}/meals/`, {
+      method: 'POST', headers: {...authHeaders(), 'Content-Type': 'application/json'},
+      body: JSON.stringify({ food_item_id: foodId, meal_type: mealType, quantity_g: parseFloat(qty) })
+    });
+    if (!res.ok) throw new Error();
+    document.getElementById('food-search').value = '';
+    document.getElementById('food-results').innerHTML = '';
+    loadTodaySummary();
+  } catch (e) { alert('صار خطأ بتسجيل الوجبة'); }
+}
+</script>
+
+</body>
+</html>
