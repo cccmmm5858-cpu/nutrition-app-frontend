@@ -366,15 +366,34 @@ async function quickCalculate() {
 // ---------- تسجيل ----------
 async function registerUser() {
   const msg = document.getElementById('reg-msg');
+  msg.className = 'msg'; msg.style.display = 'none';
+
+  const name = document.getElementById('reg-name').value.trim();
+  const email = document.getElementById('reg-email').value.trim();
+  const password = document.getElementById('reg-password').value;
+  const birth = document.getElementById('reg-birth').value;
+  const weight = document.getElementById('reg-weight').value;
+  const height = document.getElementById('reg-height').value;
+
+  // تحقق من الحقول قبل الإرسال - يمنع إرسال بيانات ناقصة للسيرفر
+  if (!name || !email || !password || !birth || !weight || !height) {
+    msg.className = 'msg error';
+    msg.textContent = 'لازم تعبّي كل الحقول (الاسم، البريد، كلمة المرور، تاريخ الميلاد، الوزن، الطول)';
+    return;
+  }
+  if (password.length < 8) {
+    msg.className = 'msg error';
+    msg.textContent = 'كلمة المرور لازم تكون 8 أحرف على الأقل';
+    return;
+  }
+
   const conditionVal = document.getElementById('reg-condition').value;
   const payload = {
-    email: document.getElementById('reg-email').value,
-    password: document.getElementById('reg-password').value,
-    full_name: document.getElementById('reg-name').value,
+    email, password, full_name: name,
     gender: document.getElementById('reg-gender').value,
-    birth_date: document.getElementById('reg-birth').value,
-    weight_kg: parseFloat(document.getElementById('reg-weight').value),
-    height_cm: parseFloat(document.getElementById('reg-height').value),
+    birth_date: birth,
+    weight_kg: parseFloat(weight),
+    height_cm: parseFloat(height),
     activity_level: document.getElementById('reg-activity').value,
     goal: document.getElementById('reg-goal').value,
     medical_condition_codes: conditionVal ? [conditionVal] : [],
@@ -384,11 +403,23 @@ async function registerUser() {
       method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload)
     });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.detail || 'فشل التسجيل');
+    if (!res.ok) {
+      // FastAPI ترجع أخطاء التحقق كمصفوفة كائنات - نحولها لنص عربي مفهوم
+      let errorText = 'صار خطأ، تأكد من البيانات وحاول مرة ثانية';
+      if (typeof data.detail === 'string') {
+        errorText = data.detail;
+      } else if (Array.isArray(data.detail)) {
+        errorText = data.detail.map(e => e.msg || JSON.stringify(e)).join(' — ');
+      }
+      throw new Error(errorText);
+    }
     msg.className = 'msg ok'; msg.textContent = 'تم إنشاء الحساب! سجّل دخولك بالأسفل';
     document.getElementById('login-email').value = payload.email;
   } catch (e) {
-    msg.className = 'msg error'; msg.textContent = e.message || 'صار خطأ، حاول مرة ثانية';
+    msg.className = 'msg error';
+    msg.textContent = e.message === 'Failed to fetch'
+      ? 'تعذر الاتصال بالسيرفر — تأكد من اتصال الإنترنت وحاول مرة ثانية'
+      : e.message;
   }
 }
 
@@ -410,7 +441,10 @@ async function loginUser() {
     localStorage.setItem('nz_user_name', state.userName);
     refreshNav();
   } catch (e) {
-    msg.className = 'msg error'; msg.textContent = e.message;
+    msg.className = 'msg error';
+    msg.textContent = e.message === 'Failed to fetch'
+      ? 'تعذر الاتصال بالسيرفر — تأكد من اتصال الإنترنت وحاول مرة ثانية'
+      : e.message;
   }
 }
 
