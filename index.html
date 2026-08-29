@@ -128,6 +128,13 @@
   .summary-bar { background: var(--sand-100); border-radius: 100px; height: 10px; overflow: hidden; margin-top: 8px;}
   .summary-bar > div { height: 100%; background: var(--teal-600); border-radius: 100px; transition: width .3s; }
 
+  .plan-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  .plan-table th { background: var(--teal-950); color: var(--sand-50); padding: 8px 4px; font-family:'Tajawal'; }
+  .plan-table td { border: 1px solid var(--sand-100); padding: 7px 4px; text-align: center; vertical-align: top; }
+  .plan-table td .meal-name { display:block; font-size: 11.5px; }
+  .plan-table td .meal-cal { display:block; font-size: 10px; color: var(--muted); margin-top: 2px; }
+  .plan-table tr:nth-child(even) { background: var(--sand-50); }
+
   .empty-state { text-align: center; padding: 30px 10px; color: var(--muted); font-size: 14px; }
 
   .top-user { display:flex; align-items:center; justify-content:space-between; margin-bottom: 20px;}
@@ -284,7 +291,31 @@
     </div>
 
     <div class="card">
-      <h3>سجّل وجبة</h3>
+      <h3>خطتك الغذائية</h3>
+      <div id="plan-empty">
+        <p style="font-size:13.5px; color:var(--muted); margin:0 0 14px;">ولّد جدول وجبات كامل تلقائياً حسب هدفك وحالتك الصحية — بدون ما تحتاج تسجّل أي وجبة بنفسك.</p>
+        <label>مدة الخطة</label>
+        <select id="plan-duration">
+          <option value="1">شهر واحد</option>
+          <option value="2">شهرين</option>
+          <option value="3">ثلاثة أشهر</option>
+        </select>
+        <button class="primary" onclick="generatePlan()">ولّد الجدول</button>
+        <div id="plan-msg" class="msg"></div>
+      </div>
+      <div id="plan-content" style="display:none;">
+        <div class="top-user" style="margin-bottom:14px;">
+          <div class="who" id="plan-summary" style="font-size:14px;"></div>
+          <button onclick="showPlanGenerator()" style="color:var(--teal-800);">توليد جدول جديد</button>
+        </div>
+        <label>اختر الأسبوع</label>
+        <select id="plan-week-select" onchange="renderPlanWeek()"></select>
+        <div id="plan-week-table" style="margin-top:14px;"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>سجّل وجبة يدوياً (اختياري)</h3>
       <input id="food-search" placeholder="ابحث عن صنف... مثال: كبسة، مندي، شوفان" oninput="searchFood()">
       <div id="food-results" style="margin-top:12px;"></div>
     </div>
@@ -465,6 +496,86 @@ async function loadDashboard() {
     document.getElementById('d-target-cal').textContent = cachedTarget.target_calories;
   } catch (e) {}
   loadTodaySummary();
+  loadMealPlan();
+}
+
+// ---------- الخطة الغذائية ----------
+const MEAL_LABELS = { breakfast: 'فطور', lunch: 'غداء', dinner: 'عشاء', snack: 'سناك' };
+let cachedPlan = null;
+
+async function loadMealPlan() {
+  try {
+    const res = await fetch(`${API_BASE}/users/${state.userId}/meal-plan/`, { headers: authHeaders() });
+    if (res.status === 404) { showPlanGenerator(); return; }
+    cachedPlan = await res.json();
+    showPlanContent();
+  } catch (e) { showPlanGenerator(); }
+}
+
+function showPlanGenerator() {
+  document.getElementById('plan-empty').style.display = 'block';
+  document.getElementById('plan-content').style.display = 'none';
+}
+
+function showPlanContent() {
+  document.getElementById('plan-empty').style.display = 'none';
+  document.getElementById('plan-content').style.display = 'block';
+  const monthsText = {1:'شهر واحد', 2:'شهرين', 3:'ثلاثة أشهر'}[cachedPlan.duration_months];
+  document.getElementById('plan-summary').textContent =
+    `خطة ${monthsText} — ${cachedPlan.meals_per_day} وجبات يومياً`;
+
+  const totalWeeks = Math.ceil(cachedPlan.duration_days / 7);
+  const select = document.getElementById('plan-week-select');
+  select.innerHTML = Array.from({length: totalWeeks}, (_, i) =>
+    `<option value="${i+1}">الأسبوع ${i+1}</option>`).join('');
+  renderPlanWeek();
+}
+
+function renderPlanWeek() {
+  const week = parseInt(document.getElementById('plan-week-select').value);
+  const weekItems = cachedPlan.items.filter(i => i.week_number === week);
+  const dayNumbers = [...new Set(weekItems.map(i => i.day_number))].sort((a,b) => a-b);
+  const mealTypes = [...new Set(cachedPlan.items.map(i => i.meal_type))];
+  // ترتيب ثابت للوجبات
+  const order = ['breakfast','lunch','dinner','snack'];
+  mealTypes.sort((a,b) => order.indexOf(a) - order.indexOf(b));
+
+  let html = '<table class="plan-table"><thead><tr><th>اليوم</th>';
+  mealTypes.forEach(mt => html += `<th>${MEAL_LABELS[mt] || mt}</th>`);
+  html += '</tr></thead><tbody>';
+
+  dayNumbers.forEach((day, idx) => {
+    html += `<tr><td><b>يوم ${idx+1}</b></td>`;
+    mealTypes.forEach(mt => {
+      // بالسناك (وجبتين محتملتين لمرضى السكري) نجمعهم بنفس الخلية
+      const entries = weekItems.filter(i => i.day_number === day && i.meal_type === mt);
+      if (entries.length === 0) { html += '<td>-</td>'; return; }
+      html += '<td>' + entries.map(e =>
+        `<span class="meal-name">${e.food_name_ar}</span><span class="meal-cal">${e.quantity_g}g • ${e.calories} سعرة</span>`
+      ).join('<hr style="margin:4px 0;border-color:var(--sand-100);">') + '</td>';
+    });
+    html += '</tr>';
+  });
+  html += '</tbody></table>';
+  document.getElementById('plan-week-table').innerHTML = html;
+}
+
+async function generatePlan() {
+  const msg = document.getElementById('plan-msg');
+  msg.className = 'msg'; msg.style.display = 'none';
+  const months = parseInt(document.getElementById('plan-duration').value);
+  try {
+    const res = await fetch(`${API_BASE}/users/${state.userId}/meal-plan/generate`, {
+      method: 'POST', headers: {...authHeaders(), 'Content-Type': 'application/json'},
+      body: JSON.stringify({ duration_months: months })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'تعذر توليد الخطة');
+    cachedPlan = data;
+    showPlanContent();
+  } catch (e) {
+    msg.className = 'msg error'; msg.textContent = e.message;
+  }
 }
 
 async function loadTodaySummary() {
