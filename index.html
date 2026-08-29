@@ -301,6 +301,14 @@
     </div>
 
     <div class="card">
+      <h3>حالاتك الطبية</h3>
+      <p style="font-size:12.5px; color:var(--muted); margin:0 0 10px;">حدّث حالاتك في أي وقت — التحديث ينعكس تلقائياً على الجدول القادم اللي تولّده.</p>
+      <div id="dash-conditions" style="max-height:200px; overflow-y:auto; border:1.5px solid var(--sand-100); border-radius:9px; padding:10px; background:var(--sand-50);"></div>
+      <button class="ghost" onclick="saveConditions()">حفظ الحالات</button>
+      <div id="conditions-msg" class="msg"></div>
+    </div>
+
+    <div class="card">
       <h3>خطتك الغذائية</h3>
       <div id="plan-empty">
         <p style="font-size:13.5px; color:var(--muted); margin:0 0 14px;">ولّد جدول وجبات كامل تلقائياً حسب هدفك وحالتك الصحية — بدون ما تحتاج تسجّل أي وجبة بنفسك.</p>
@@ -507,6 +515,46 @@ async function loadDashboard() {
   } catch (e) {}
   loadTodaySummary();
   loadMealPlan();
+  loadConditions();
+}
+
+// ---------- الحالات الطبية ----------
+const ALL_CONDITIONS = [
+  ["diabetes_t2", "سكري النوع الثاني"], ["hypertension", "ارتفاع ضغط الدم"],
+  ["high_cholesterol", "ارتفاع الكوليسترول"], ["ckd", "أمراض الكلى المزمنة"],
+  ["gout", "النقرس"], ["ibs", "القولون العصبي"], ["celiac", "حساسية القمح / السيلياك"],
+  ["lactose_intolerance", "عدم تحمل اللاكتوز"], ["anemia", "فقر الدم"],
+  ["gerd", "الحموضة وارتجاع المريء"], ["liver_disease", "أمراض الكبد"],
+  ["allergy_nuts", "حساسية المكسرات"], ["allergy_shellfish", "حساسية المحار والقشريات"],
+  ["allergy_dairy", "حساسية الألبان"],
+];
+
+async function loadConditions() {
+  const container = document.getElementById('dash-conditions');
+  let current = [];
+  try {
+    const res = await fetch(`${API_BASE}/users/${state.userId}/medical-conditions/`, { headers: authHeaders() });
+    if (res.ok) current = (await res.json()).condition_codes;
+  } catch (e) {}
+  container.innerHTML = ALL_CONDITIONS.map(([code, label]) => `
+    <label style="display:flex; align-items:center; gap:8px; font-size:14px; margin:0 0 8px; cursor:pointer;">
+      <input type="checkbox" value="${code}" style="width:auto;" ${current.includes(code) ? 'checked' : ''}> ${label}
+    </label>`).join('');
+}
+
+async function saveConditions() {
+  const msg = document.getElementById('conditions-msg');
+  const codes = Array.from(document.querySelectorAll('#dash-conditions input:checked')).map(el => el.value);
+  try {
+    const res = await fetch(`${API_BASE}/users/${state.userId}/medical-conditions/`, {
+      method: 'PUT', headers: {...authHeaders(), 'Content-Type': 'application/json'},
+      body: JSON.stringify({ condition_codes: codes })
+    });
+    if (!res.ok) throw new Error();
+    msg.className = 'msg ok'; msg.textContent = 'تم الحفظ — ولّد جدول جديد تحت عشان يطبّق التحديث';
+  } catch (e) {
+    msg.className = 'msg error'; msg.textContent = 'تعذر الحفظ، حاول مرة ثانية';
+  }
 }
 
 // ---------- الخطة الغذائية ----------
